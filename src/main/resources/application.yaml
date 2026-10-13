@@ -17,5 +17,5 @@ spring:
       path: /h2-console
 
 jwt:
-  secret: "nbaHangmanSecretKeyForJwtTokenGenerationSecurityKey2026Secure!"
+  secret: ${JWT_SECRET:nbaHangmanSecretKeyForJwtTokenGenerationSecurityKey2026Secure!}
   expirationMs: 86400000 # 24 horas

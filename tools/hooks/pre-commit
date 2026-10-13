@@ -1,0 +1,18 @@
+# Instalar com: tools/install-hooks.sh
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM | grep '\.java$')
+if [ -z "$STAGED" ]; then
+    exit 0
+fi
+
+echo "[pre-commit] Running Checkstyle on staged Java files..."
+./mvnw -q checkstyle:check -Dcheckstyle.failsOnError=true 2>&1
+STATUS=$?
+
+if [ $STATUS -ne 0 ]; then
+    echo "[pre-commit] Checkstyle found ERROR-level violations. Commit blocked."
+    echo "Run './mvnw checkstyle:checkstyle' to see details."
+    exit 1
+fi
+
+exit 0

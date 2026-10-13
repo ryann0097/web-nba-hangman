@@ -216,10 +216,13 @@ public class GameService {
         session.setStatus(GameStatus.WIN);
         user.setGamesPlayed(user.getGamesPlayed() + 1);
         user.setGamesWon(user.getGamesWon() + 1);
-        // Pontuação baseada na dificuldade (1=10pts, 2=20pts, 3=30pts) + bônus de tentativas restantes
-        int earnedScore = (session.getDifficulty() * 10) + ((session.getMaxTries() - session.getWrongGuesses()) * 5);
-        user.setScore(user.getScore() + earnedScore);
+        user.setScore(user.getScore() + calculateEarnedScore(session));
         userRepository.save(user);
+    }
+
+    // Pontuação: dificuldade (1=10pts, 2=20pts, 3=30pts) + bônus de tentativas restantes
+    int calculateEarnedScore(GameSession session) {
+        return (session.getDifficulty() * 10) + ((session.getMaxTries() - session.getWrongGuesses()) * 5);
     }
 
     private void handleLoss(GameSession session, User user) {
@@ -256,39 +259,20 @@ public class GameService {
         if (session.isMvp()) badges.add("MVP");
         if (session.isAt75()) badges.add("75th TEAM");
 
-        // CODE SMELL: Concatenação ineficiente de String em loop (Inefficient String Concatenation)
-        String masked = "";
-        for (char c : session.getTargetWord().toCharArray()) {
-            if (Character.isLetter(c)) {
-                if (session.getUsedLetters().contains(Character.toUpperCase(c))) {
-                    masked += c + " ";
-                } else {
-                    masked += "_ ";
-                }
-            } else if (c == ' ') {
-                masked += "  ";
-            } else {
-                masked += c + " ";
-            }
-        }
-
-        /*
-        // Implementação recomendada (eficiente com StringBuilder):
         StringBuilder masked = new StringBuilder();
         for (char c : session.getTargetWord().toCharArray()) {
             if (Character.isLetter(c)) {
                 if (session.getUsedLetters().contains(Character.toUpperCase(c))) {
-                    masked.append(c).append(" ");
+                    masked.append(c).append(' ');
                 } else {
                     masked.append("_ ");
                 }
             } else if (c == ' ') {
                 masked.append("  ");
             } else {
-                masked.append(c).append(" ");
+                masked.append(c).append(' ');
             }
         }
-        */
 
         int stageIndex = Math.min(session.getWrongGuesses(), HANGMAN_STAGES.length - 1);
         String asciiArt = HANGMAN_STAGES[stageIndex];

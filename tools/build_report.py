@@ -98,11 +98,44 @@ def parse_cpd_xml(cpd_path):
         return {"error": f"Failed to parse CPD: {str(e)}", "total_duplications": 0, "duplications": []}
 
 
+def parse_pmd_xml(pmd_path):
+    if not os.path.exists(pmd_path):
+        return {"total_violations": 0, "violations": []}
+
+    try:
+        tree = ET.parse(pmd_path)
+        root = tree.getroot()
+        ns = ""
+        if root.tag.startswith("{"):
+            ns = root.tag.split("}")[0] + "}"
+
+        violations = []
+        for file_elem in root.findall(f".//{ns}file"):
+            filename = file_elem.get("name", "")
+            if "src/main/java" in filename:
+                filename = filename[filename.index("src/main/java"):]
+            for v in file_elem.findall(f"{ns}violation"):
+                violations.append({
+                    "file": filename,
+                    "line": int(v.get("beginline", 0)),
+                    "priority": int(v.get("priority", 5)),
+                    "rule": v.get("rule", ""),
+                    "message": (v.text or "").strip()
+                })
+        return {
+            "total_violations": len(violations),
+            "violations": violations[:20]
+        }
+    except Exception as e:
+        return {"error": f"Failed to parse PMD: {str(e)}", "total_violations": 0, "violations": []}
+
+
 def main():
     target = Path("target")
     jacoco_csv = target / "site/jacoco/jacoco.csv"
     checkstyle_xml = target / "checkstyle-result.xml"
     cpd_xml = target / "cpd.xml"
+    pmd_xml = target / "pmd.xml"
     history_json = target / "history_report.json"
 
     history_data = {}
@@ -114,6 +147,7 @@ def main():
         "project": "NBA Hangman Web API",
         "coverage_metrics": parse_jacoco_csv(jacoco_csv),
         "code_smells_checkstyle": parse_checkstyle_xml(checkstyle_xml),
+        "pmd_violations": parse_pmd_xml(pmd_xml),
         "duplication_cpd": parse_cpd_xml(cpd_xml),
         "git_history": history_data
     }

@@ -33,10 +33,10 @@ jobs:
         with:
           python-version: '3.12'
 
-      # 4. Executa Testes e Sensores de Qualidade (JaCoCo + Checkstyle)
-      - name: 4. Run Tests & Static Analysis (JaCoCo & Checkstyle)
+      # 4. Executa Testes e Sensores de Qualidade (JaCoCo + Checkstyle + PMD/CPD)
+      - name: 4. Run Tests & Static Analysis (JaCoCo, Checkstyle, PMD & CPD)
         run: |
-          ./mvnw clean test jacoco:report checkstyle:checkstyle
+          ./mvnw clean test jacoco:report checkstyle:checkstyle pmd:pmd pmd:cpd
 
       # 5. Executa os analisadores do Laboratório
       - name: 5. Analyze Git History & Churn
@@ -46,6 +46,11 @@ jobs:
       - name: 6. Build Unified Quality Report
         run: |
           python3 tools/build_report.py
+
+      - name: 6.1 Enforce Quality Gate
+        run: |
+          pip install pyyaml
+          python3 tools/quality_gate.py
 
       # 7. Invoca o AI Advisor
       - name: 7. Run AI Quality Advisor
@@ -82,3 +87,5 @@ jobs:
             target/pr_comment.md
             target/site/jacoco/
             target/checkstyle-result.xml
+            target/pmd.xml
+            target/cpd.xml
